@@ -19,7 +19,8 @@ using HtmlAgilityPack;
 using System.Net.Sockets;
 using Microsoft.Win32;
 using System.Collections.Specialized;
-using TenDayBrowser; //
+using TenDayBrowser;
+using System.Xml; //
 
 namespace AutoBroswer
 {
@@ -151,6 +152,7 @@ namespace AutoBroswer
             public float m_endPrice;
 
             public string m_ztcTitle;
+            public string m_zrWangwangName;
         }
         List<STKeyInfo> keyInfoCollection = new List<STKeyInfo>();
         List<STBroserInfo> broswerUACollection = new List<STBroserInfo>();
@@ -205,7 +207,8 @@ namespace AutoBroswer
             }
             
             Control.CheckForIllegalCrossThreadCalls = false;
-            nonParameterThread1 = new Thread((SimulateVisitThreadNew));
+            //nonParameterThread1 = new Thread((SimulateVisitThreadNew));
+            nonParameterThread1 = new Thread((SimulateVisitThread));
             //nonParameterThread1.IsBackground = true;
             nonParameterThread1.SetApartmentState(ApartmentState.STA);
             nonParameterThread1.Start();
@@ -289,7 +292,7 @@ namespace AutoBroswer
         }
         public void StartBrowserProcess([Optional, DefaultParameterValue(false)]bool forceOpen)
         {
-            this.BrowserManager.CreateBrowserProcess(!forceOpen && (this.toolStripButtonOpenBrowser.Text == "打开浏览器"), this._mainWnd);
+            this.BrowserManager.CreateBrowserProcess(!forceOpen, this._mainWnd);
         }
         public MyTask GetTestTask()
         {
@@ -302,7 +305,7 @@ namespace AutoBroswer
                     {
                         task = this._testTask;
                         this._testTask = null;
-                        this.RunTask(task);
+                        //this.RunTask(task);
                     }
                     return task;
                 }
@@ -313,10 +316,18 @@ namespace AutoBroswer
             }
             return task;
         }
-        private MyTask _testTask;
+        private MyTask _testTask = new MyTask();
         private int _curTaskIndex = -1;
         private int _inputIndex = 0;
         private int _buttonIndex = 0;
+        private int WaitFindTime = 1;
+        private string jobInfoStr = "";
+        private int WaitDocCompleteTime = 20;
+        private IntPtr _mainWnd = IntPtr.Zero;
+        private string _uaString = "";
+        private string _uaCaptionString = "";
+        private string _ipAddress = "";
+        string[] m_clickMainPageItem = { "首页", "查看所有宝贝", "进入店铺", "按销量", "按新品", "按价格", "按收藏" };
         private bool initTaskInfo()
         {
             _testTask.Remove(-1);
@@ -335,19 +346,19 @@ namespace AutoBroswer
                 {
                     referURL = "http://" + referURL;
                 }
-                int num = TaskCommand.Task_Navigate;
-                TaskInfo task = new TaskInfo(num.ToString(), str, str2, "", "");
-                this._task.Insert(task, this._curTaskIndex++);
+                int num = (int)(TaskCommand.Task_Navigate);
+                TaskInfo task = new TaskInfo(num.ToString(), naviteURL, referURL, "", "");
+                this._testTask.Insert(task, this._curTaskIndex++);
 
                 //this.ReloadTask(false);
                 //this.SetTaskItem(TaskCommand.Task_None);
             }
             return true;
         }
-        private bool createInputText(string textBoxInputBoxName, string textBoxInputText, [Optional, DefaultParameterValue(ElementTag.ID)] ElementTag iD, [Optional, DefaultParameterValue(0)] index)
+        private bool createInputText(string textBoxInputBoxName, string textBoxInputText, [Optional, DefaultParameterValue(ElementTag.ID)] ElementTag iD, [Optional, DefaultParameterValue(0)] int index)
         {
-            string str = textBoxInputBoxName.Text.Trim();
-            string str2 = textBoxInputText.Text.Trim();
+            string str = textBoxInputBoxName.Trim();
+            string str2 = textBoxInputText.Trim();
             //ElementTag iD = ElementTag.ID;
             if (!string.IsNullOrEmpty(str) && !string.IsNullOrEmpty(str2))
             {
@@ -362,62 +373,298 @@ namespace AutoBroswer
                 {
                     info = new TaskInfo(num.ToString(), str, str2, num2.ToString(), index.ToString());
                 }
-                this._task.Insert(info, this._curTaskIndex++);
+                this._testTask.Insert(info, this._curTaskIndex++);
 
             }
             return true;
         }
-        private bool createClickButton(string textBoxButtonID, [Optional, DefaultParameterValue(ElementTag.className)] ElementTag iD, [Optional, DefaultParameterValue(0)] index)
+        private bool createClickButton(string textBoxButtonID, [Optional, DefaultParameterValue(ElementTag.className)] ElementTag iD, [Optional, DefaultParameterValue(0)] int index)
         {
             if (!string.IsNullOrEmpty(textBoxButtonID))
             {
                 TaskInfo info;
-                int num = TaskCommand.Task_ClickButton;
+                int num = (int)(TaskCommand.Task_ClickButton);
                 int num2 = (int)iD;
                 info = new TaskInfo(num.ToString(), textBoxButtonID, num2.ToString(), index.ToString(), "");
-                this._task.Insert(info, this._curTaskIndex++);
+                this._testTask.Insert(info, this._curTaskIndex++);
             }
             return true;
         }
-        private bool createClickLink(string linkName, [Optional, DefaultParameterValue(ElementTag.className)] ElementTag iD)
+        private bool createClickLink(string linkName, string keyword, [Optional, DefaultParameterValue(ElementTag.className)] ElementTag iD, [Optional, DefaultParameterValue(0)] int index)
         {
             if (!string.IsNullOrEmpty(linkName))
             {
                 TaskInfo info;
-                int num = TaskCommand.Task_ClickLink;
+                int num = (int)(TaskCommand.Task_ClickLink);
                 int num2 = (int)iD;
-                info = new TaskInfo(num.ToString(), linkName, num2.ToString(), index.ToString(), "");
-                this._task.Insert(info, this._curTaskIndex++);
+                info = new TaskInfo(num.ToString(), linkName, keyword, num2.ToString(), index.ToString());
+                this._testTask.Insert(info, this._curTaskIndex++);
+            }
+            return true;
+        }
+        private bool createGoPage(string textBoxInputText)
+        {
+            string str2 = textBoxInputText.Trim();
+            //ElementTag iD = ElementTag.ID;
+            if (!string.IsNullOrEmpty(str2))
+            {
+                TaskInfo info;
+                int num = (int)TaskCommand.Task_GoPage;
+                info = new TaskInfo(num.ToString(), str2, "", "", "");
+                this._testTask.Insert(info, this._curTaskIndex++);
+
+            }
+            return true;
+        }
+        private bool createWait(int waitTime)
+        {
+            if (0 != waitTime)
+            {
+                TaskInfo info;
+                int num = (int)(TaskCommand.Task_Wait);
+                info = new TaskInfo(num.ToString(), waitTime.ToString(), "", "", "");
+                this._testTask.Insert(info, this._curTaskIndex++);
+            }
+            return true;
+        }
+        private bool createZRFindPage(string wangwangName, [Optional, DefaultParameterValue(ElementTag.className)] ElementTag iD, [Optional, DefaultParameterValue(0)] int index)
+        {
+            if (!string.IsNullOrEmpty(wangwangName))
+            {
+                TaskInfo info;
+                int num = (int)(TaskCommand.Task_ClickLink);
+                int num2 = (int)iD;
+                info = new TaskInfo(num.ToString(), wangwangName, num2.ToString(), index.ToString(), "");
+                this._testTask.Insert(info, this._curTaskIndex++);
             }
             return true;
         }
         private bool CreateZRSearchTask(STKeyInfo keyInfo)
         {
-            createNativeURL("www.taobao.com", "www.baidu.com");
-            createInputText("q", keyInfo.m_keyword, ElementTag.ID, 0);
-            createClickButton("btn-seasrch", ElementTag.className, 0);
+            TaskInfo task = new TaskInfo("4", "www.taobao.com", "", "", "");
+            this._testTask.Insert(task, -1);
+            task = new TaskInfo(((int)(TaskCommand.Task_InputText)).ToString(), "q", keyInfo.m_keyword, "", "");
+            this._testTask.Insert(task, -1);
+            task = new TaskInfo("2", "btn-search", "3", "", "");
+            this._testTask.Insert(task, -1);
 
             if (keyInfo.isZTCClick() == false)
             {
-                if (keyInfo.m_sortType == 1)
+                if (keyInfo.m_sortType == 2)
                 {
-                    createClickLink("人气", ElementTag.outerText);
-                }else if (keyInfo.m_sortType == 2)
+                    task = new TaskInfo(((int)(TaskCommand.Task_ClickLink)).ToString(), "人气", "", ((int)ElementTag.outerText).ToString(), "0");
+                    _testTask.Insert(task, -1);
+                    //createClickLink("人气", "", ElementTag.outerText, 0);
+                }else if (keyInfo.m_sortType == 1)
                 {
-                    createClickLink("销量", ElementTag.outerText);
+                    task = new TaskInfo(((int)(TaskCommand.Task_ClickLink)).ToString(), "销量", "", ((int)ElementTag.outerText).ToString(), "0");
+                    _testTask.Insert(task, -1);
+                    //createClickLink("销量", "", ElementTag.outerText, 0);
                 }
             }
             if (keyInfo.m_startPrice < keyInfo.m_endPrice)
             {
-                createInputText("start_price", keyInfo.m_startPrice.ToString(), ElementTag.name, 0);
-                createInputText("end_price", keyInfo.m_endPrice.ToString(), ElementTag.name, 0);
-                createClickButton("确定", ElementTag.outerText, 2);
+                task = new TaskInfo(((int)(TaskCommand.Task_InputText)).ToString(), "start_price", keyInfo.m_startPrice.ToString(), ((int)ElementTag.name).ToString(), "0");
+                this._testTask.Insert(task, -1);
+                task = new TaskInfo(((int)(TaskCommand.Task_InputText)).ToString(), "end_price", keyInfo.m_endPrice.ToString(), ((int)ElementTag.name).ToString(), "0");
+                this._testTask.Insert(task, -1);
+                task = new TaskInfo(((int)(TaskCommand.Task_ClickButton)).ToString(), "确定", ((int)ElementTag.outerText).ToString(), "1", "");
+                this._testTask.Insert(task, -1);
+                //createInputText("start_price", keyInfo.m_startPrice.ToString(), ElementTag.name, 0);
+                //createInputText("end_price", keyInfo.m_endPrice.ToString(), ElementTag.name, 0);
+                //createClickButton("确定", ElementTag.outerText, 1);
             }
 
+            int defaultMaxPage = 50;
             if (keyInfo.m_startPage < keyInfo.m_endPage && keyInfo.m_startPage != 1)
             {
-                createInputText("page-num", keyInfo.m_startPage.ToString(), ElementTag, 0);
-                createClickLink（）；
+                task = new TaskInfo(((int)(TaskCommand.Task_GoPage)).ToString(), keyInfo.m_startPage.ToString(), "", "", "");
+                _testTask.Insert(task, -1);
+
+                defaultMaxPage = keyInfo.m_endPage - keyInfo.m_startPage;
+                //createGoPage( keyInfo.m_startPage.ToString());
+            }
+
+            if (keyInfo.isZTCClick() == false)
+            {
+                task = new TaskInfo(((int)TaskCommand.Task_FindLinkLinkPage1).ToString(), keyInfo.m_zrWangwangName, "下一页", defaultMaxPage.ToString(), "");
+                _testTask.Insert(task, -1);
+            }
+            else
+            {
+                task = new TaskInfo(((int)TaskCommand.Task_FindLinkLinkPage1).ToString(), keyInfo.m_ztcTitle, "下一页", defaultMaxPage.ToString(), "");
+                _testTask.Insert(task, -1);
+            }
+
+            if (compareCB.Checked)
+            {
+                int randCompare = rndGenerator.Next(1, 4);
+                for (int i = 0; i < randCompare; i++)
+                {
+                    int rndCmpTime = rndGenerator.Next(5, 13);
+                    task = new TaskInfo(((int)TaskCommand.Task_ClickCompare).ToString(), "http://detail.tmall.com/item.htm", "http://item.taobao.com/item.htm", "", "");
+                    _testTask.Insert(task, -1);
+                    task = new TaskInfo(((int)TaskCommand.Task_VisitCompare).ToString(), rndCmpTime.ToString(), i.ToString(), "", "");
+                    _testTask.Insert(task, -1);
+                }
+            }
+
+            if (keyInfo.isZTCClick() == false)
+            {
+                task = new TaskInfo(((int)TaskCommand.Task_ClickMe).ToString(), keyInfo.m_zrWangwangName, "", ((int)ElementTag.outerText).ToString(), "");
+                _testTask.Insert(task, -1);
+            }
+            else
+            {
+                task = new TaskInfo(((int)TaskCommand.Task_ClickLink).ToString(), keyInfo.m_ztcTitle, "", ((int)ElementTag.title).ToString(), "");
+                _testTask.Insert(task, -1);
+            }
+
+            
+
+            int visitMainPage = rndGenerator.Next(getMainItemMinTime(), getMainItemMaxTime());
+            task = new TaskInfo(((int)TaskCommand.Task_VisitPage).ToString(), visitMainPage.ToString(), "", "", "");
+            _testTask.Insert(task, -1);
+
+            int enterMainIndex = rndGenerator.Next(0, m_clickMainPageItem.Length);
+            task = new TaskInfo(((int)TaskCommand.Task_ClickLink).ToString(), m_clickMainPageItem[enterMainIndex].ToString(),
+                "", ((int)ElementTag.outerText).ToString(), "");
+            _testTask.Insert(task, -1);
+
+            int pageVisitDeep = getVisitDeep();
+            if (visitDeepRndCheckBox.Checked)
+            {
+                pageVisitDeep = rndGenerator.Next(1, 5);
+            }
+
+            for (int i = 0; i < pageVisitDeep; i++)
+            {
+                int rndVisitTime = rndGenerator.Next(getOtherItemMinTime(), getOtherItemMaxTime());
+                task = new TaskInfo(((int)TaskCommand.Task_ClickCompare).ToString(), "http://detail.tmall.com/item.htm", "http://item.taobao.com/item.htm", "", "");
+                _testTask.Insert(task, -1);
+                task = new TaskInfo(((int)TaskCommand.Task_VisitPage).ToString(), rndVisitTime.ToString(), "", "", "");
+                _testTask.Insert(task, -1);
+            }
+            
+            return true;
+        }
+        public void SendRunTask(MyTask mytask)
+        {
+            try
+            {
+                COPYDATASTRUCT copydatastruct;
+                XmlDocument document = new XmlDocument();
+                XmlElement newChild = document.CreateElement("root");
+                XmlElement element2 = document.CreateElement("tasks");
+                XmlElement element4 = document.CreateElement("task");
+                XmlElement element5 = document.CreateElement("params");
+                foreach (TaskInfo info in mytask._taskItems)
+                {
+                    XmlElement element6 = document.CreateElement("taskinfo");
+                    XmlElement element7 = document.CreateElement("param1");
+                    XmlElement element8 = document.CreateElement("param2");
+                    XmlElement element9 = document.CreateElement("param3");
+                    XmlElement element10 = document.CreateElement("param4");
+                    XmlElement element11 = document.CreateElement("param5");
+                    element7.InnerText = info._param1;
+                    element6.AppendChild(element7);
+                    if ((info._param2 != string.Empty) && (info._param2 != ""))
+                    {
+                        element8.InnerText = info._param2;
+                        element6.AppendChild(element8);
+                    }
+                    if (info._param3 != string.Empty)
+                    {
+                        element9.InnerText = info._param3;
+                        element6.AppendChild(element9);
+                    }
+                    if (info._param4 != string.Empty)
+                    {
+                        element10.InnerText = info._param4;
+                        element6.AppendChild(element10);
+                    }
+                    if (info._param5 != string.Empty)
+                    {
+                        element11.InnerText = info._param5;
+                        element6.AppendChild(element11);
+                    }
+                    element4.AppendChild(element6);
+                }
+                XmlElement element3 = document.CreateElement("taskid");
+                element3.InnerText = mytask._id.ToString();
+                element5.AppendChild(element3);
+                element3 = null;
+                element4.AppendChild(element5);
+                element2.AppendChild(element4);
+                newChild.AppendChild(element2);
+                XmlElement element12 = document.CreateElement("setting");
+                if (WaitFindTime != 0)
+                {
+                    element3 = document.CreateElement("waitFindTime");
+                    element3.InnerText = WaitFindTime.ToString();
+                    element12.AppendChild(element3);
+                    element3 = null;
+                }
+                if (this.WaitDocCompleteTime != 0)
+                {
+                    element3 = document.CreateElement("waitDocCompleteTime");
+                    element3.InnerText = this.WaitDocCompleteTime.ToString();
+                    element12.AppendChild(element3);
+                    element3 = null;
+                }
+                if (this.jobInfoStr != "")
+                {
+                    element3 = document.CreateElement("JobInfoStr");
+                    element3.InnerText = this.jobInfoStr.ToString();
+                    element12.AppendChild(element3);
+                    element3 = null;
+                }
+                if (jobExpireTimer.Text.ToString() != "")
+                {
+                    element3 = document.CreateElement("JobExpireTime");
+                    element3.InnerText = jobExpireTimer.Text.ToString();
+                    element12.AppendChild(element3);
+                    element3 = null;
+                }
+                if (_ipAddress.ToString() != "")
+                {
+                    element3 = document.CreateElement("IpAddress");
+                    element3.InnerText = _ipAddress.ToString();
+                    element12.AppendChild(element3);
+                    element3 = null;
+                }
+                if (_uaString.ToString() != "")
+                {
+                    element3 = document.CreateElement("UAString");
+                    element3.InnerText = _uaString.ToString();
+                    element12.AppendChild(element3);
+                    element3 = null;
+                }
+                if (_uaCaptionString.ToString() != "")
+                {
+                    element3 = document.CreateElement("UACaptionString");
+                    element3.InnerText = _uaCaptionString.ToString();
+                    element12.AppendChild(element3);
+                    element3 = null;
+                }
+                //if (!string.IsNullOrEmpty(this._curAddress))
+                //{
+                //    element3 = document.CreateElement("curAddress");
+                //    element3.InnerText = this._curAddress;
+                //    element12.AppendChild(element3);
+                //    element3 = null;
+                //}
+                newChild.AppendChild(element12);
+                document.AppendChild(newChild);
+                string outerXml = document.OuterXml;
+                int length = Encoding.Unicode.GetBytes(outerXml).Length;
+                copydatastruct.dwData = IntPtr.Zero;
+                copydatastruct.lpData = outerXml;
+                copydatastruct.cbDaat = length + 2;
+                _browserManager.RunTask(mytask._id, copydatastruct);
+            }
+            catch (Exception)
+            {
             }
         }
         private void SimulateVisitThreadNew()
@@ -452,6 +699,7 @@ namespace AutoBroswer
                         uaCaptionStr = broswerUACollection[uaIndex].m_uaDesc;
                     }
                     keyInfo.m_ztcTitle = ztcTextBox.Text.Trim().ToString();
+                    keyInfo.m_zrWangwangName = sellerNameTB.Text.Trim();
                     string searchName = "第 " + index + " 个，" + "关键词:" + keyInfo.m_keyword + "";
                     FileLogger.Instance.LogInfo(searchName);
 
@@ -467,10 +715,24 @@ namespace AutoBroswer
                             continue;
                         }
                     }
-                    SimulateTab simulateTab = new SimulateTab(keyInfo, uaString, this, expireTimer);
-                    simulateInfoText.Text = " IP:" + curSelectComboboxName.ToString() + " 系统浏览器[版本号]:" + uaCaptionStr + " " + searchName;
-                    Application.Run(simulateTab);
-                    GC.Collect();
+                    _ipAddress = curSelectComboboxName.ToString() +　" : " +searchName;
+                    _uaCaptionString = uaCaptionStr;
+                    _uaString = uaString;
+                    StartBrowserProcess(true);
+                    initTaskInfo();
+                    CreateZRSearchTask(keyInfo);
+                    //Thread.Sleep(1000);
+                    while (!_browserManager.GetEmptyBrowserWindow())
+                    {
+                        Thread.Sleep(100);
+                    }
+                    SendRunTask(_testTask);
+                    _browserManager.WaitForTaskDone();
+                    _browserManager.StopBrowserTask(true, 0);
+                    //SimulateTab simulateTab = new SimulateTab(keyInfo, uaString, this, expireTimer);
+                    //simulateInfoText.Text = " IP:" + curSelectComboboxName.ToString() + " 系统浏览器[版本号]:" + uaCaptionStr + " " + searchName;
+                    //Application.Run(simulateTab);
+                    //GC.Collect();
                     if (isDebugCB.Checked == false)
                     {
                         bRet = disconnectVPN();
@@ -491,11 +753,11 @@ namespace AutoBroswer
                     LogInfoTextBox.Text += DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "下一个任务" + "\n";
 
                     FileLogger.Instance.LogInfo("下一个任务!");
-                    if (simulateTab.isNormalQuit == false)
-                    {
-                        FileLogger.Instance.LogInfo("手动停止!");
-                        break;
-                    }
+                    //if (simulateTab.isNormalQuit == false)
+                    //{
+                    //    FileLogger.Instance.LogInfo("手动停止!");
+                    //    break;
+                    //}
                 }
             }
             catch (Exception error)
@@ -576,6 +838,7 @@ namespace AutoBroswer
                             LogInfoTextBox.Text += DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "cookie清理失败了" + "\n";
                         }
                         bRet = runNiuBDASHI();
+                        Thread.Sleep(5000);
                     }
 
                     LogInfoTextBox.Text += DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "下一个任务" + "\n";
@@ -969,6 +1232,7 @@ namespace AutoBroswer
         {
             try
             {
+                _mainWnd = base.Handle;
                 //keywordRichTB.Text = File.ReadAllText("KeyWord.txt", Encoding.Default);
                 string fileLines = File.ReadAllText("KeyWord.txt", Encoding.Default);
                 string[] lines = Regex.Split(fileLines, "\n");

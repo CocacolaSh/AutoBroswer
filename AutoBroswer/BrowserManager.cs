@@ -20,7 +20,24 @@ namespace AutoBroswer
         {
             return this._taskBrowsers.Count;
         }
-
+        public void WaitForTaskDone()
+        {
+            if (GetBrowsersCount() <= 0)
+            {
+                return ;
+            }
+            TaskBrowser browser = _taskBrowsers[GetBrowsersCount() - 1] as TaskBrowser;
+            browser.WaitForExit();
+        }
+        public void WaitForInputIdle()
+        {
+            if (GetBrowsersCount() <= 0)
+            {
+                return;
+            }
+            TaskBrowser browser = _taskBrowsers[GetBrowsersCount() - 1] as TaskBrowser;
+            browser.WaitForInputIdle();
+        }
         public bool GetEmptyBrowserProcess()
         {
             foreach (TaskBrowser browser in this._taskBrowsers)

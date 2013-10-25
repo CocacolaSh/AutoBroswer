@@ -20,7 +20,7 @@ namespace TenDayBrowser
         public int _completeTotalCount;
         public int _failTotalCount;
         public ArrayList _HourClicks;
-        public int _id;
+        public uint _id;
         public bool _isRun;
         public ArrayList _taskItems = new ArrayList();
         public uint _totalDayClicks;
@@ -127,7 +127,8 @@ namespace TenDayBrowser
             }
             else
             {
-                this._taskItems.Insert(index, task);
+                this._taskItems.Add(task);
+                //this._taskItems.Insert(index, task);
             }
         }
 
@@ -141,6 +142,10 @@ namespace TenDayBrowser
             if ((index >= 0) && (index < this._taskItems.Count))
             {
                 this._taskItems.RemoveAt(index);
+            }
+            else
+            {
+                _taskItems.Clear();
             }
         }
 

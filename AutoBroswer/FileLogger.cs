@@ -41,8 +41,7 @@ namespace AutoBroswer
         public void LogInfo(string entry)
         {
             if (this.logWriter == null)
-                throw new InvalidOperationException(
-                    "Logger is not open");
+                return;
             logWriter.WriteLine("{0} - {1}",
                  DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                  entry);

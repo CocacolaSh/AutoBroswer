@@ -327,7 +327,7 @@ namespace AutoBroswer
 
             if (m_currentStep == ECurrentStep.ECurrentStep_Load)
             {
-                DateTime dateExpire = DateTime.Parse("2013-10-25 12:30:01");
+                DateTime dateExpire = DateTime.Parse("2013-12-25 12:30:01");
                 if (DateTime.Now > dateExpire)
                 {
                     MessageBox.Show("未知错误，可能淘宝又变标签了，请联系作者", "出错啦！");
@@ -552,12 +552,18 @@ namespace AutoBroswer
             string endPriceStr = keyInfo.m_endPrice.ToString();
             endPriceEle.SetAttribute("value", endPriceStr);
             endPriceEle.RaiseEvent("onmousedown");
-            string attrName = btnPriceEle.GetAttribute("className");
+            //string attrName = btnPriceEle.GetAttribute("className");
             //do
             //{
             //    Application.DoEvents();
             //    attrName = btnPriceEle.GetAttribute("className");
             //} while (attrName != "i on");
+            Application.DoEvents();
+            Application.DoEvents();
+            Application.DoEvents();
+            Application.DoEvents();
+            Application.DoEvents();
+            Application.DoEvents();
             Application.DoEvents();
             Application.DoEvents();
             Application.DoEvents();
@@ -580,7 +586,7 @@ namespace AutoBroswer
             //InitialTabBrowser.Document.GetElementById("rank-priceform").All[0].All[1].InvokeMember("submit");
           
             btnPriceEle.Focus();
-             
+
             //btnPriceEle.InvokeMember("submit");
             //btnPriceEle.RaiseEvent("onclick");
             btnPriceEle.InvokeMember("click", null);
@@ -613,7 +619,7 @@ namespace AutoBroswer
 
             if (m_currentStep == ECurrentStep.ECurrentStep_Load)
             {
-                DateTime dateExpire = DateTime.Parse("2013-10-25 12:30:01");
+                DateTime dateExpire = DateTime.Parse("2013-12-29 02:30:01");
                 if (DateTime.Now > dateExpire)
                 {
                     MessageBox.Show("未知错误，可能淘宝又变标签了，请联系作者", "出错啦！");

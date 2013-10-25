@@ -11,6 +11,7 @@
         outerHTML,
         value,
         href,
-        src
+        src,
+        title
     }
 }

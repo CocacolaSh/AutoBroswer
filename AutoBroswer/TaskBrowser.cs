@@ -46,6 +46,7 @@ namespace AutoBroswer
         public bool IsEmptyWindow()
         {
             return (!this._isRun && (this.GetMainWindowHandle() != IntPtr.Zero));
+            //return !_isRun;
         }
 
         public bool IsProcessExit()
@@ -103,6 +104,14 @@ namespace AutoBroswer
             this._process = null;
         }
 
+        public void WaitForExit()
+        {
+            _process.WaitForExit();
+        }
+        public void WaitForInputIdle()
+        {
+            _process.WaitForInputIdle();
+        }
         public System.Diagnostics.Process Process
         {
             get

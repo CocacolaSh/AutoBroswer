@@ -744,6 +744,10 @@ namespace TenDayBrowser
             {
                 return ((ele.getAttribute("href", 0) != null) && ele.getAttribute("href", 0).ToString().Trim().Equals(itemName));
             }
+            if (tag == ElementTag.title)
+            {
+                return ((ele.getAttribute("title", 0) != null) && ele.getAttribute("title", 0).ToString().Trim().Equals(itemName));
+            }
             if (tag != ElementTag.src)
             {
                 return false;
@@ -918,6 +922,42 @@ namespace TenDayBrowser
             }
             return flag;
         }
+        public static bool ScrollToAbsolutePointNoElement(IntPtr hwnd, mshtml.IHTMLDocument2 doc, int scrollTop, int y, int scrollHeight, int winHeight, ref Point fakeMousePoint, bool scrollFast)
+        {
+            int num2;
+            bool flag = false;
+            int num = 0;
+            Random random = new Random();
+            if (scrollFast)
+            {
+                num2 = 100;
+            }
+            else
+            {
+                num2 = random.Next(5, 10);
+            }
+            CheckMousePoint(hwnd, ref fakeMousePoint, doc);
+            while (!flag && (num < num2))
+            {
+                int windowMessageLParam = GetWindowMessageLParam(hwnd, fakeMousePoint);
+                if ((y <= ((scrollTop + (winHeight / 2)) - 120)) && (scrollTop > 0))
+                {
+                    scrollTop = ((scrollTop - 120) >= 0) ? (scrollTop - 120) : 0;
+                    WindowUtil.PostMessage(hwnd, 0x20a, 0x780000, windowMessageLParam);
+                }
+                else if ((y >= ((scrollTop + (winHeight / 2)) + 120)) && ((scrollTop + winHeight) < scrollHeight))
+                {
+                    scrollTop = (((scrollTop + winHeight) + 120) <= scrollHeight) ? (scrollTop + 120) : (scrollHeight - winHeight);
+                    WindowUtil.PostMessage(hwnd, 0x20a, -7864320, windowMessageLParam);
+                }
+                else
+                {
+                    flag = true;
+                }
+                num++;
+            }
+            return flag;
+        }
 
         public static bool ScrollToBottom(IntPtr hwnd, mshtml.IHTMLDocument2 doc, HtmlElement htmlElement, Point fakeMousePoint, int loadPercent, bool isTimeout)
         {
@@ -955,6 +995,25 @@ namespace TenDayBrowser
                 ScrollToAbsolutePoint(hwnd, doc, scrollTop, height, scrollHeight, clientHeight, ref fakeMousePoint, false, isTimeout, htmlElement);
             }
             return flag;
+        }
+
+        public static bool ScrollToUp(IntPtr hwnd, mshtml.IHTMLDocument2 doc, HtmlElement htmlElement, Point fakeMousePoint, int loadPercent, bool isTimeout)
+        {
+            bool flag = false;
+            int clientWidth = 0;
+            int clientHeight = 0;
+            int scrollWidth = 0;
+            int scrollHeight = 0;
+            if ((GetWindowWidthAndHeight(hwnd, doc, ref clientWidth, ref clientHeight, ref scrollWidth, ref scrollHeight) == null) || (htmlElement == null))
+            {
+                return flag;
+            }
+            int scrollTop = htmlElement.ScrollTop;
+            if ((clientWidth == 0) && (clientHeight == 0))
+            {
+                return flag;
+            }
+            return ScrollToAbsolutePoint(hwnd, doc, scrollTop, 0, scrollHeight, clientHeight, ref fakeMousePoint, true, isTimeout, htmlElement);
         }
 
         public static void SetMousePoint(ref Point fakeMousePoint, int x, int y, int maxX, int maxY)

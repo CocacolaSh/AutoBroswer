@@ -14,8 +14,8 @@ namespace TenDayBrowser
     public partial class TenDayBrowser : Form
     {
         public static int WAITDOCCOMPLETE = 20;
-        public static int WAITFINDTIME = 20;
-
+        public static int WAITFINDTIME = 1;
+        public static int WAITTIME = 20;
         public static int SYSTEMWAITTIME = 1;
         private ExtendedTabControl tabControl;
         public static int THREADINTERVAL = 200;
@@ -40,7 +40,9 @@ namespace TenDayBrowser
         private bool _taskThreadRun;
         private Timer _timer;
         private int _waitDocCompleteTime = WAITDOCCOMPLETE;
+        public int _jobExpireTime = 15;
         private int _waitFindTime = WAITFINDTIME;
+        private int _waitTime = WAITTIME;
         private TextBox addressTextBox;
         public static bool ALLOWSCROLLWHILEWAITING = true;
 
@@ -58,6 +60,7 @@ namespace TenDayBrowser
             this._parentProcessHwnd = (IntPtr)hwnd;
             InitializeComponent();
             InitTaskManager();
+            //TestTask();
         }
         public void InitTaskManager()
         {
@@ -326,7 +329,7 @@ namespace TenDayBrowser
             this._taskThreadRun = true;
             if (this._ieItem == null)
             {
-                this._ieItem = new IEItem(this, task, this._waitFindTime, this._waitDocCompleteTime);
+                this._ieItem = new IEItem(this, task, this._waitFindTime, this._waitTime, this._waitDocCompleteTime);
                 this.New(true, this._ieItem);
             }
         }
@@ -395,7 +398,7 @@ namespace TenDayBrowser
                                                     }
                                                 }
                                             }
-                                            if ((WindowUtil.StringToInt(s) > -1) && (WindowUtil.StringToInt(s) < 0x1d))
+                                            if ((WindowUtil.StringToInt(s) > -1) && (WindowUtil.StringToInt(s) < (int)TaskCommand.Task_Count))
                                             {
                                                 TaskInfo info = new TaskInfo(s, innerText, str3, str4, str5);
                                                 task.Insert(info, -1);
@@ -409,7 +412,7 @@ namespace TenDayBrowser
                                                 XmlElement element = (XmlElement)node6;
                                                 if (element.Name.Equals("taskid"))
                                                 {
-                                                    task._id = WindowUtil.StringToInt(element.InnerText);
+                                                    task._id = (uint)WindowUtil.StringToInt(element.InnerText);
                                                 }
                                                 if (element.Name.Equals("ClickIntervalTime"))
                                                 {
@@ -458,13 +461,37 @@ namespace TenDayBrowser
                                 {
                                     this._waitFindTime = WindowUtil.StringToInt(node7.InnerText);
                                 }
+                                else if  (node7.Name.Equals("waitTime"))
+                                {
+                                    _waitTime = WindowUtil.StringToInt(node7.InnerText);
+                                }
                                 else if (node7.Name.Equals("waitDocCompleteTime"))
                                 {
                                     this._waitDocCompleteTime = WindowUtil.StringToInt(node7.InnerText);
                                 }
-                                if (node7.Name.Equals("curAddress"))
+                                else if (node7.Name.Equals("JobExpireTime"))
+                                {
+                                    _jobExpireTime = WindowUtil.StringToInt(node7.InnerText);
+                                }
+                                else if (node7.Name.Equals("JobInfoStr"))
+                                {
+                                    this.Text += (node7.InnerText);
+                                }
+                                else if (node7.Name.Equals("curAddress"))
                                 {
                                     this.ShowTip1(node7.InnerText);
+                                }
+                                else if (node7.Name.Equals("IpAddress"))
+                                {
+                                    this.Text += (node7.InnerText);
+                                }
+                                else if (node7.Name.Equals("UAString"))
+                                {
+                                    //
+                                }
+                                else if (node7.Name.Equals("UACaptionString"))
+                                {
+                                    this.Text += "  "+ (node7.InnerText);
                                 }
                             }
                             continue;
@@ -539,7 +566,7 @@ namespace TenDayBrowser
         {
             if (this._completedIeItem != null)
             {
-                this.SendCompleteTask(this._completedIeItem.Task._id, this._completedIeItem.IsCompleted, this._completedIeItem.TaskInfoIndex, this._completedIeItem.ErrorString);
+                this.SendCompleteTask((int)this._completedIeItem.Task._id, this._completedIeItem.IsCompleted, this._completedIeItem.TaskInfoIndex, this._completedIeItem.ErrorString);
                 this._completedIeItem = null;
                 this._ieItem = null;
                 Application.Exit();
@@ -678,6 +705,82 @@ namespace TenDayBrowser
             {
                 return this._waitFindTime;
             }
+        }
+        public ExtendedTabControl TabControl
+        {
+            get { return tabControl; }
+        }
+        private void TestTask()
+        {
+            this._task = new MyTask();
+            //TaskInfo task = new TaskInfo("6", "255", "", "", "");
+            //this._task.Insert(task, -1);
+            TaskInfo task = new TaskInfo("4", "www.taobao.com", "", "", "");
+            this._task.Insert(task, -1);
+            task = new TaskInfo("1", "q", "铁观音 茶农直销", "", "");
+            this._task.Insert(task, -1);
+            task = new TaskInfo("2", "btn-search", "3", "", "");
+            this._task.Insert(task, -1);
+
+            //task = new TaskInfo("30", "150", "300", "", "");
+            //this._task.Insert(task, -1);
+
+            //task = new TaskInfo("1", "page", "15", "1", "0");
+            //this._task.Insert(task, -1);
+            //task = new TaskInfo("3", "确定", "", "2", "0");
+            //this._task.Insert(task, -1);
+
+            //task = new TaskInfo("29", "15", "", "", "");
+            //this._task.Insert(task, -1);
+
+            task = new TaskInfo(((int)TaskCommand.Task_FindLinkLinkPage1).ToString(), "铁状元", "下一页", "50", "");
+            this._task.Insert(task, -1);
+
+            //task = new TaskInfo(((int)TaskCommand.Task_ClickCompare).ToString(), "http://detail.tmall.com/item.htm", "http://item.taobao.com/item.htm", "", "");
+            //this._task.Insert(task, -1);
+            //task = new TaskInfo(((int)TaskCommand.Task_VisitCompare).ToString(), "10", "1", "", "");
+            //this._task.Insert(task, -1);
+
+            //task = new TaskInfo(((int)TaskCommand.Task_ClickCompare).ToString(), "http://detail.tmall.com/item.htm", "http://item.taobao.com/item.htm", "", "");
+            //this._task.Insert(task, -1);
+            //task = new TaskInfo(((int)TaskCommand.Task_VisitCompare).ToString(), "10", "2", "", "");
+            //this._task.Insert(task, -1);
+
+            //task = new TaskInfo(((int)TaskCommand.Task_ClickCompare).ToString(), "http://detail.tmall.com/item.htm", "http://item.taobao.com/item.htm", "", "");
+            //this._task.Insert(task, -1);
+            //task = new TaskInfo(((int)TaskCommand.Task_VisitCompare).ToString(), "10", "3", "", "");
+            //this._task.Insert(task, -1);
+
+            task = new TaskInfo(((int)TaskCommand.Task_ClickMe).ToString(), "铁状元", "",((int)ElementTag.outerText).ToString(), "");
+            this._task.Insert(task, -1);
+            task = new TaskInfo(((int)TaskCommand.Task_VisitPage).ToString(), "12", "", "", "");
+            this._task.Insert(task, -1);
+
+            task = new TaskInfo(((int)TaskCommand.Task_ClickLink).ToString(), "进入店铺", "", ((int)ElementTag.outerText).ToString(), "");
+            this._task.Insert(task, -1);
+
+            task = new TaskInfo(((int)TaskCommand.Task_ClickCompare).ToString(), "http://detail.tmall.com/item.htm", "http://item.taobao.com/item.htm", "", "");
+            this._task.Insert(task, -1);
+            task = new TaskInfo(((int)TaskCommand.Task_VisitPage).ToString(), "20", "", "", "");
+            this._task.Insert(task, -1);
+
+            task = new TaskInfo(((int)TaskCommand.Task_ClickCompare).ToString(), "http://detail.tmall.com/item.htm", "http://item.taobao.com/item.htm", "", "");
+            this._task.Insert(task, -1);
+            task = new TaskInfo(((int)TaskCommand.Task_VisitPage).ToString(), "20", "", "", "");
+            this._task.Insert(task, -1);
+
+            task = new TaskInfo("0", "105", "", "", "");
+            this._task.Insert(task, -1);
+
+            //task = new TaskInfo("7", "小米手机M红米2 1.5G四核4.7HD屏800W像素双卡双待 红米手机现货 手机", "下一页", "3", "");
+            //this._task.Insert(task, -1);
+            //task = new TaskInfo("3", "小米手机M红米2 1.5G四核4.7HD屏800W像素双卡双待 红米手机现货 手机", "", "2", "");
+            //this._task.Insert(task, -1);
+            //task = new TaskInfo("5", "10", "10", "http://detail.tmall.com/item.htm", "");
+            //this._task.Insert(task, -1);
+            //task = new TaskInfo("0", "10", "", "", "");
+            //this._task.Insert(task, -1);
+            this.StartTaskThread(this._task);
         }
     }
 }

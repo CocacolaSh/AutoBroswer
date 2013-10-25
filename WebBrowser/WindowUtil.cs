@@ -95,7 +95,7 @@
                 {
                     StringBuilder lpString = new StringBuilder(0x400);
                     GetWindowText(hwnd, lpString, lpString.Capacity);
-                    if ("点击精灵浏览器".Equals(lpString.ToString()))
+                    if ("十日浏览器".Equals(lpString.ToString()))
                     {
                         _processWnd[iD] = hwnd;
                         SetLastError(0);

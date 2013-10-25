@@ -19,7 +19,7 @@ namespace TenDayBrowser
         private Point _fakeMousePoint = new Point(1, 1);
         private Point _fakeMouseTo = new Point(-1, -1);
         private int _fakeScrollHeight = -1;
-        private bool _findTimeOut;
+        private bool _WaitTimeOut;
         private bool _inputClickTaobaoCloseButton;
         private int _inputIndex = -1;
         private int _inputKeyTime;
@@ -49,14 +49,16 @@ namespace TenDayBrowser
         private bool _threadRun;
         private int _totalWaitDocCompleteTime;
         private int _totalWaitFindTime;
+        private int _totalWaitTime;
         private DateTime _waitDocTime = new DateTime();
         private DateTime _waitFindTime = new DateTime();
         private int _waitTime;
 
-        public IEItem(TenDayBrowser parent, MyTask task, int totalWaitFindTime, int totalWaitDocCompleteTime)
+        public IEItem(TenDayBrowser parent, MyTask task, int totalWaitFindTime, int totalWaitTime, int totalWaitDocCompleteTime)
         {
             this._startTaskTime = this._now = DateTime.Now;
             this._totalWaitFindTime = totalWaitFindTime;
+            _totalWaitTime = totalWaitTime;
             this._totalWaitDocCompleteTime = totalWaitDocCompleteTime;
             this._task = task;
             this._threadRun = true;
@@ -172,7 +174,7 @@ namespace TenDayBrowser
                         {
                             this.ResetBrowserComplete();
                         }
-                        if (!isClick && this.FindTimeOut())
+                        if (!isClick && this.WaitTimeOut())
                         {
                             parent.ShowTip2("点击不到按钮 \"" + itemName + "\"");
                             flag = true;
@@ -182,7 +184,7 @@ namespace TenDayBrowser
                 else
                 {
                     this.MoveMouseToBottom(windowHwnd, domDocument);
-                    if (this.MoveTimeOut() && this.FindTimeOut())
+                    if (this.MoveTimeOut() && this.WaitTimeOut())
                     {
                         parent.ShowTip2("没有找到按钮 \"" + itemName + "\"");
                         flag = true;
@@ -194,7 +196,7 @@ namespace TenDayBrowser
                 }
                 return flag;
             }
-            if (this.FindTimeOut())
+            if (this.WaitTimeOut())
             {
                 flag = true;
             }
@@ -231,7 +233,7 @@ namespace TenDayBrowser
                         {
                             this.ResetBrowserComplete();
                         }
-                        if (!isClick && this.FindTimeOut())
+                        if (!isClick && this.WaitTimeOut())
                         {
                             parent.ShowTip2("点击不到复选框 \"" + itemName + "\"");
                             this._errorString = this._errorString + "点击不到复选框 \"" + itemName;
@@ -242,7 +244,7 @@ namespace TenDayBrowser
                 else
                 {
                     this.MoveMouseToBottom(windowHwnd, domDocument);
-                    if (this.MoveTimeOut() && this.FindTimeOut())
+                    if (this.MoveTimeOut() && this.WaitTimeOut())
                     {
                         parent.ShowTip2("没有找到复选框 \"" + itemName + "\"");
                         this._errorString = this._errorString + "没有找到复选框 \"" + itemName + "\"";
@@ -255,7 +257,7 @@ namespace TenDayBrowser
                 }
                 return flag;
             }
-            if (this.FindTimeOut())
+            if (this.WaitTimeOut())
             {
                 flag = true;
             }
@@ -297,7 +299,7 @@ namespace TenDayBrowser
                         {
                             this.ResetBrowserComplete();
                         }
-                        if (!isClick && this.FindTimeOut())
+                        if (!isClick && this.WaitTimeOut())
                         {
                             if (setErrorCode)
                             {
@@ -313,7 +315,7 @@ namespace TenDayBrowser
                 {
                     isFind = true;
                     this.MoveMouseToBottom(windowHwnd, domDocument);
-                    if (this.MoveTimeOut() && this.FindTimeOut())
+                    if (this.MoveTimeOut() && this.WaitTimeOut())
                     {
                         if (setErrorCode)
                         {
@@ -330,7 +332,7 @@ namespace TenDayBrowser
                 }
                 return flag;
             }
-            if (this.FindTimeOut())
+            if (this.WaitTimeOut())
             {
                 flag = true;
             }
@@ -367,7 +369,7 @@ namespace TenDayBrowser
                         {
                             this.ResetBrowserComplete();
                         }
-                        if (!isClick && this.FindTimeOut())
+                        if (!isClick && this.WaitTimeOut())
                         {
                             parent.ShowTip2("点击不到单选框 \"" + itemName + "\"");
                             this._errorString = this._errorString + "点击不到单选框 \"" + itemName;
@@ -378,7 +380,7 @@ namespace TenDayBrowser
                 else
                 {
                     this.MoveMouseToBottom(windowHwnd, domDocument);
-                    if (this.MoveTimeOut() && this.FindTimeOut())
+                    if (this.MoveTimeOut() && this.WaitTimeOut())
                     {
                         parent.ShowTip2("没有找到单选框 \"" + itemName + "\"");
                         this._errorString = this._errorString + "没有找到单选框 \"" + itemName + "\"";
@@ -391,7 +393,7 @@ namespace TenDayBrowser
                 }
                 return flag;
             }
-            if (this.FindTimeOut())
+            if (this.WaitTimeOut())
             {
                 flag = true;
             }
@@ -413,7 +415,7 @@ namespace TenDayBrowser
                     {
                         this._inputClickTaobaoCloseButton = true;
                     }
-                    if (!isClick && this.FindTimeOut())
+                    if (!isClick && this.WaitTimeOut())
                     {
                         this._inputClickTaobaoCloseButton = true;
                     }
@@ -571,16 +573,16 @@ namespace TenDayBrowser
             }
             if (this._loopTime < WindowUtil.StringToInt(param4.Split(new char[] { ',' })[0]))
             {
-                if (!this._findTimeOut)
+                if (!this._WaitTimeOut)
                 {
                     if (!this.FindTimeOut())
                     {
                         IntPtr ptr4 = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
-                        this.MoveMouseToBottom(ptr4, document);
+                        //this.MoveMouseToBottom(ptr4, document);
                     }
                     else
                     {
-                        this._findTimeOut = true;
+                        this._WaitTimeOut = true;
                         this._scrollTime = this._beforeWaitTime = this._waitFindTime = this._now;
                     }
                 }
@@ -588,15 +590,15 @@ namespace TenDayBrowser
                 {
                     if (((command == TaskCommand.Task_FindLinkLinkPage1) || (command == TaskCommand.Task_FindHrefLinkPage1)) || (command == TaskCommand.Task_FindSrcLinkPage1))
                     {
-                        this.ClickLink(parent, param3, string.Empty, 2.ToString(), indexStr, ref isFind, ref isClick, false, false, ref clickLinkCount);
+                        this.ClickLink(parent, param3, string.Empty, ((int)ElementTag.outerText).ToString(), indexStr, ref isFind, ref isClick, false, false, ref clickLinkCount);
                     }
                     else if (((command == TaskCommand.Task_FindLinkHrefPage1) || (command == TaskCommand.Task_FindHrefHrefPage1)) || (command == TaskCommand.Task_FindSrcHrefPage1))
                     {
-                        this.ClickLink(parent, param3, string.Empty, 6.ToString(), indexStr, ref isFind, ref isClick, false, false, ref clickLinkCount);
+                        this.ClickLink(parent, param3, string.Empty, ((int)ElementTag.href).ToString(), indexStr, ref isFind, ref isClick, false, false, ref clickLinkCount);
                     }
                     else if (((command == TaskCommand.Task_FindLinkSrcPage1) || (command == TaskCommand.Task_FindHrefSrcPage1)) || (command == TaskCommand.Task_FindSrcSrcPage1))
                     {
-                        this.ClickLink(parent, param3, string.Empty, 7.ToString(), indexStr, ref isFind, ref isClick, false, false, ref clickLinkCount);
+                        this.ClickLink(parent, param3, string.Empty, ((int)ElementTag.src).ToString(), indexStr, ref isFind, ref isClick, false, false, ref clickLinkCount);
                     }
                     if (!isFind)
                     {
@@ -629,6 +631,24 @@ namespace TenDayBrowser
             return false;
         }
 
+        private bool WaitTimeOut()
+        {
+            if (this._isDocCompleted)
+            {
+                TimeSpan span = (TimeSpan)(this._now - this._waitFindTime);
+                return (span.TotalSeconds >= this._totalWaitTime);
+            }
+            return false;
+        }
+        private bool IsPageTimeOut(int timeSec)
+        {
+            if (this._isDocCompleted)
+            {
+                TimeSpan span = (TimeSpan)(this._now - this._enterPageTime);
+                return (span.TotalSeconds >= timeSec);
+            }
+            return false;
+        }
         private bool Fresh(TenDayBrowser parent)
         {
             if (this._curTenDayBrowser != null)
@@ -695,7 +715,7 @@ namespace TenDayBrowser
                 if (doc2 != null)
                 {
                     this.MoveMouseToBottom(windowHwnd, doc2);
-                    if (this.MoveTimeOut() && this.FindTimeOut())
+                    if (this.MoveTimeOut() && this.WaitTimeOut())
                     {
                         parent.ShowTip2("不存在 " + keyword);
                         this._loop = false;
@@ -704,7 +724,347 @@ namespace TenDayBrowser
                 }
                 return flag;
             }
-            if (this.FindTimeOut())
+            if (this.WaitTimeOut())
+            {
+                flag = true;
+            }
+            return flag;
+        }
+
+        private bool GetRandClickLinkInfo(TenDayBrowser parent, mshtml.IHTMLDocument2 doc2, string keyword1, string keyword2)
+        {
+            bool flag = false;
+            if (((this._curTenDayBrowser != null) && (this._curTenDayBrowser.Document != null)) && (doc2 != null))
+            {
+                IntPtr windowHwnd = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
+                int clientWidth = 0;
+                int clientHeight = 0;
+                int scrollWidth = 0;
+                int scrollHeight = 0;
+                mshtml.IHTMLElement2 element = HtmlUtil.GetWindowWidthAndHeight(windowHwnd, doc2, ref clientWidth, ref clientHeight, ref scrollWidth, ref scrollHeight);
+                mshtml.IHTMLElementCollection links = doc2.links;
+                ArrayList list = new ArrayList();
+                if (string.IsNullOrEmpty(keyword1))
+                {
+                    keyword1 = "";
+                }
+                Regex regex = new Regex(keyword1 + @"(\w)?");
+                Regex regex2 = new Regex(keyword2 + @"(\w)?");
+                foreach (mshtml.IHTMLElement element2 in links)
+                {
+                    if ((((element2.getAttribute("href", 0) != null) && (element2.getAttribute("target", 0) != null)) && element2.getAttribute("target", 0).ToString().ToLower().Equals("_blank")) &&
+                        (string.IsNullOrEmpty(keyword1) || regex.IsMatch(element2.getAttribute("href", 0).ToString()) || regex2.IsMatch(element2.getAttribute("href", 0).ToString())
+                        && (element2.getAttribute("title", 0) != null && element2.getAttribute("title", 0) != "")
+                        ))
+                    {
+                        Rectangle elementRect = HtmlUtil.GetElementRect(doc2.body, element2);
+                        if ((((elementRect.Height > 0) && (elementRect.Width > 0)) && (((elementRect.X + element.scrollLeft) > 0) && ((elementRect.X + element.scrollLeft) < scrollWidth))) && (((elementRect.Y + element.scrollTop) > 0) && ((elementRect.Y + element.scrollTop) < scrollHeight)))
+                        {
+                            list.Add(element2);
+                        }
+                    }
+                }
+                if (list.Count > 0)
+                {
+                    Random random = new Random();
+                    int num5 = random.Next(list.Count);
+                    random = null;
+                    mshtml.IHTMLElement ele = list[num5] as mshtml.IHTMLElement;
+                    if (!string.IsNullOrEmpty(ele.outerText) && !string.IsNullOrEmpty(ele.outerText.Trim()))
+                    {
+                        this._randomClickLink = ele.outerText;
+                        this._randomClickLinkTag = ElementTag.outerText;
+                    }
+                    else
+                    {
+                        this._randomClickLinkTag = ElementTag.href;
+                        this._randomClickLink = ele.getAttribute("href", 0).ToString();
+                    }
+                    this._randomClickLinkIndex = HtmlUtil.GetLinkElementIndex(doc2, ele, this._randomClickLink, ((int)this._randomClickLinkTag).ToString());
+                    this._status = IEStatus.IEStatus_MoveToDest;
+                    this._beforeWaitTime = this._now;
+                    list = null;
+                    random = null;
+                    flag = true;
+                    return flag;
+                }
+                if (doc2 != null)
+                {
+                    this.MoveMouseToBottom(windowHwnd, doc2);
+                    if (this.MoveTimeOut() && this.WaitTimeOut())
+                    {
+                        parent.ShowTip2("不存在 " + keyword1 + "||" + keyword2);
+                        this._loop = false;
+                        flag = true;
+                    }
+                }
+                return flag;
+            }
+            if (this.WaitTimeOut())
+            {
+                flag = true;
+            }
+            return flag;
+        }
+
+        private bool GetMEClickLinkInfo(TenDayBrowser parent, mshtml.IHTMLDocument2 doc2, string wangwangName, string tagStr)
+        {
+            bool flag = false;
+            if (((this._curTenDayBrowser != null) && (this._curTenDayBrowser.Document != null)) && (doc2 != null))
+            {
+                IntPtr windowHwnd = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
+                int clientWidth = 0;
+                int clientHeight = 0;
+                int scrollWidth = 0;
+                int scrollHeight = 0;
+                mshtml.IHTMLElement2 element = HtmlUtil.GetWindowWidthAndHeight(windowHwnd, doc2, ref clientWidth, ref clientHeight, ref scrollWidth, ref scrollHeight);
+                mshtml.IHTMLElementCollection links = doc2.links;
+                ArrayList list = new ArrayList();
+
+                ElementTag iD = ElementTag.ID;
+                if ((tagStr != string.Empty) && (tagStr != ""))
+                {
+                    iD = (ElementTag) WindowUtil.StringToInt(tagStr);
+                }
+
+                foreach (mshtml.IHTMLElement element2 in links)
+                {
+                    if ((((element2.getAttribute("href", 0) != null) && (element2.getAttribute("target", 0) != null)) && element2.getAttribute("target", 0).ToString().ToLower().Equals("_blank")) &&
+                        HtmlUtil.IsElementMatch(element2, iD, wangwangName, "")
+                        )
+                    {
+                        Rectangle elementRect = HtmlUtil.GetElementRect(doc2.body, element2);
+                        if ((((elementRect.Height > 0) && (elementRect.Width > 0)) && (((elementRect.X + element.scrollLeft) > 0) && ((elementRect.X + element.scrollLeft) < scrollWidth))) && (((elementRect.Y + element.scrollTop) > 0) && ((elementRect.Y + element.scrollTop) < scrollHeight)))
+                        {
+                            list.Add(element2);
+                        }
+                    }
+                }
+                if (list.Count == 1)
+                {
+                    mshtml.IHTMLElement ele = list[0] as mshtml.IHTMLElement;
+                    try
+                    {
+                        mshtml.IHTMLElement itemBoxEle = ele.parentElement.parentElement.parentElement;
+                        IHTMLElementCollection children = itemBoxEle.children as mshtml.IHTMLElementCollection;
+                        foreach (IHTMLElement div in children)
+                        {
+                            if (div.className == "summary")
+                            {
+                                IHTMLElementCollection children2 = div.children as mshtml.IHTMLElementCollection;
+                                foreach (IHTMLElement ele2 in children2)
+                                {
+                                    if (ele2.tagName.ToLower().Trim() == "a")
+                                    {
+                                        ele = ele2;
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                    	//
+                        return false;
+                    }
+
+                    if (!string.IsNullOrEmpty(ele.outerText) && !string.IsNullOrEmpty(ele.outerText.Trim()))
+                    {
+                        this._randomClickLink = ele.outerText;
+                        this._randomClickLinkTag = ElementTag.outerText;
+                    }
+                    else
+                    {
+                        this._randomClickLinkTag = ElementTag.href;
+                        this._randomClickLink = ele.getAttribute("href", 0).ToString();
+                    }
+                    this._randomClickLinkIndex = HtmlUtil.GetLinkElementIndex(doc2, ele, this._randomClickLink, ((int)this._randomClickLinkTag).ToString());
+                    this._status = IEStatus.IEStatus_MoveToDest;
+                    this._beforeWaitTime = this._now;
+                    list = null;
+                    flag = true;
+                    return flag;
+                }
+                if (doc2 != null)
+                {
+                    this.MoveMouseToBottom(windowHwnd, doc2);
+                    if (this.MoveTimeOut() && this.WaitTimeOut())
+                    {
+                        parent.ShowTip2("不存在标签 :" + tagStr + " 的店铺:" + wangwangName);
+                        this._loop = false;
+                        flag = true;
+                    }
+                }
+                return flag;
+            }
+            if (this.WaitTimeOut())
+            {
+                flag = true;
+            }
+            return flag;
+        }
+
+        //private bool GetPageClickLinkInfo(TenDayBrowser parent, mshtml.IHTMLDocument2 doc2, string linkName, string tagStr)
+        //{
+        //    bool flag = false;
+        //    if (((this._curTenDayBrowser != null) && (this._curTenDayBrowser.Document != null)) && (doc2 != null))
+        //    {
+        //        IntPtr windowHwnd = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
+        //        int clientWidth = 0;
+        //        int clientHeight = 0;
+        //        int scrollWidth = 0;
+        //        int scrollHeight = 0;
+        //        mshtml.IHTMLElement2 element = HtmlUtil.GetWindowWidthAndHeight(windowHwnd, doc2, ref clientWidth, ref clientHeight, ref scrollWidth, ref scrollHeight);
+        //        mshtml.IHTMLElementCollection links = doc2.links;
+        //        ArrayList list = new ArrayList();
+
+        //        ElementTag iD = ElementTag.ID;
+        //        if ((tagStr != string.Empty) && (tagStr != ""))
+        //        {
+        //            iD = (ElementTag)WindowUtil.StringToInt(tagStr);
+        //        }
+
+        //        foreach (mshtml.IHTMLElement element2 in links)
+        //        {
+        //            if ((((element2.getAttribute("href", 0) != null) && (element2.getAttribute("target", 0) != null)) && element2.getAttribute("target", 0).ToString().ToLower().Equals("_blank")) &&
+        //                HtmlUtil.IsElementMatch(element2, iD, wangwangName, "")
+        //                )
+        //            {
+        //                Rectangle elementRect = HtmlUtil.GetElementRect(doc2.body, element2);
+        //                if ((((elementRect.Height > 0) && (elementRect.Width > 0)) && (((elementRect.X + element.scrollLeft) > 0) && ((elementRect.X + element.scrollLeft) < scrollWidth))) && (((elementRect.Y + element.scrollTop) > 0) && ((elementRect.Y + element.scrollTop) < scrollHeight)))
+        //                {
+        //                    list.Add(element2);
+        //                }
+        //            }
+        //        }
+        //        if (list.Count == 1)
+        //        {
+        //            mshtml.IHTMLElement ele = list[0] as mshtml.IHTMLElement;
+        //            try
+        //            {
+        //                mshtml.IHTMLElement itemBoxEle = ele.parentElement.parentElement.parentElement;
+        //                IHTMLElementCollection children = itemBoxEle.children as mshtml.IHTMLElementCollection;
+        //                foreach (IHTMLElement div in children)
+        //                {
+        //                    if (div.className == "summary")
+        //                    {
+        //                        IHTMLElementCollection children2 = div.children as mshtml.IHTMLElementCollection;
+        //                        foreach (IHTMLElement ele2 in children2)
+        //                        {
+        //                            if (ele2.tagName == "a")
+        //                            {
+        //                                ele = ele2;
+        //                                break;
+        //                            }
+        //                        }
+        //                        break;
+        //                    }
+        //                }
+        //            }
+        //            catch (System.Exception ex)
+        //            {
+        //                //
+        //                return false;
+        //            }
+
+        //            if (!string.IsNullOrEmpty(ele.outerText) && !string.IsNullOrEmpty(ele.outerText.Trim()))
+        //            {
+        //                this._randomClickLink = ele.outerText;
+        //                this._randomClickLinkTag = ElementTag.outerText;
+        //            }
+        //            else
+        //            {
+        //                this._randomClickLinkTag = ElementTag.href;
+        //                this._randomClickLink = ele.getAttribute("href", 0).ToString();
+        //            }
+        //            this._randomClickLinkIndex = HtmlUtil.GetLinkElementIndex(doc2, ele, this._randomClickLink, ((int)this._randomClickLinkTag).ToString());
+        //            this._status = IEStatus.IEStatus_MoveToDest;
+        //            this._beforeWaitTime = this._now;
+        //            list = null;
+        //            flag = true;
+        //            return flag;
+        //        }
+        //        if (doc2 != null)
+        //        {
+        //            this.MoveMouseToBottom(windowHwnd, doc2);
+        //            if (this.MoveTimeOut() && this.WaitTimeOut())
+        //            {
+        //                parent.ShowTip2("不存在标签 :" + tagStr + " 的店铺:" + wangwangName);
+        //                this._loop = false;
+        //                flag = true;
+        //            }
+        //        }
+        //        return flag;
+        //    }
+        //    if (this.WaitTimeOut())
+        //    {
+        //        flag = true;
+        //    }
+        //    return flag;
+        //}
+
+        private bool GetPageClickLinkInfo(TenDayBrowser parent, mshtml.IHTMLDocument2 doc2, int index)
+        {
+            bool flag = false;
+            if (((this._curTenDayBrowser != null) && (this._curTenDayBrowser.Document != null)) && (doc2 != null))
+            {
+                IntPtr windowHwnd = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
+                int clientWidth = 0;
+                int clientHeight = 0;
+                int scrollWidth = 0;
+                int scrollHeight = 0;
+                mshtml.IHTMLElement2 element = HtmlUtil.GetWindowWidthAndHeight(windowHwnd, doc2, ref clientWidth, ref clientHeight, ref scrollWidth, ref scrollHeight);
+                mshtml.IHTMLElementCollection links = doc2.links;
+                ArrayList list = new ArrayList();
+
+                string outText = clickLinkItem[index];
+
+                foreach (mshtml.IHTMLElement element2 in links)
+                {
+                    if (element2.innerText != null && element2.innerText.ToLower().Trim().Contains(outText))
+                    {
+                        Rectangle elementRect = HtmlUtil.GetElementRect(doc2.body, element2);
+                        if ((((elementRect.Height > 0) && (elementRect.Width > 0)) && (((elementRect.X + element.scrollLeft) > 0) && ((elementRect.X + element.scrollLeft) < scrollWidth))) && (((elementRect.Y + element.scrollTop) > 0) && ((elementRect.Y + element.scrollTop) < scrollHeight)))
+                        {
+                            list.Add(element2);
+                        }
+                    }
+                }
+                if (list.Count == 1)
+                {
+                    mshtml.IHTMLElement ele = list[0] as mshtml.IHTMLElement;
+                    if (!string.IsNullOrEmpty(ele.outerText) && !string.IsNullOrEmpty(ele.outerText.Trim()))
+                    {
+                        this._randomClickLink = ele.outerText;
+                        this._randomClickLinkTag = ElementTag.outerText;
+                    }
+                    else
+                    {
+                        this._randomClickLinkTag = ElementTag.href;
+                        this._randomClickLink = outText;
+                    }
+                    this._randomClickLinkIndex = HtmlUtil.GetLinkElementIndex(doc2, ele, this._randomClickLink, ((int)this._randomClickLinkTag).ToString());
+                    this._status = IEStatus.IEStatus_MoveToDest;
+                    this._beforeWaitTime = this._now;
+                    list = null;
+                    flag = true;
+                    return flag;
+                }
+                if (doc2 != null)
+                {
+                    this.MoveMouseToBottom(windowHwnd, doc2);
+                    if (this.MoveTimeOut() && this.WaitTimeOut())
+                    {
+                        parent.ShowTip2("不存在标签 :" + outText);
+                        this._loop = false;
+                        flag = true;
+                    }
+                }
+                return flag;
+            }
+            if (this.WaitTimeOut())
             {
                 flag = true;
             }
@@ -792,8 +1152,8 @@ namespace TenDayBrowser
                                 if (this._inputKeyTime < this._inputTotalKeyTime)
                                 {
                                     int wParam = 0xe5;
-                                    WindowUtil.PostMessage(windowHwnd, 0x100, wParam, num);
-                                    WindowUtil.PostMessage(windowHwnd, 0x101, wParam, num);
+                                    WindowUtil.PostMessage(windowHwnd, (int)WindowsMessages.WM_KEYDOWN, wParam, num);
+                                    WindowUtil.PostMessage(windowHwnd, (int)WindowsMessages.WM_KEYUP, wParam, num);
                                     this._inputKeyTime++;
                                     this._inputWaitTime = 0;
                                     this._inputTotalWaitTime = random.Next(0, 3);
@@ -819,9 +1179,9 @@ namespace TenDayBrowser
                                         }
                                         while (num3 < str2.Length)
                                         {
-                                            Thread.Sleep(random.Next(100));
+                                            Thread.Sleep(random.Next(20));
                                             WindowUtil.SendMessage(windowHwnd, 0x100, 8, num);
-                                            Thread.Sleep(random.Next(100));
+                                            Thread.Sleep(random.Next(20));
                                             WindowUtil.SendMessage(windowHwnd, 0x101, 8, num);
                                             flag2 = true;
                                             num3++;
@@ -835,14 +1195,14 @@ namespace TenDayBrowser
                                         for (int i = 0; (i < num4) && (num5 < text.Length); i++)
                                         {
                                             WindowUtil.SendMessage(windowHwnd, 0x286, text[num5], 0);
-                                            Thread.Sleep(random.Next(100));
+                                            Thread.Sleep(random.Next(20));
                                             num5++;
                                         }
                                         if ((elem.getAttribute("value", 0) == null) || (num5 > elem.getAttribute("value", 0).ToString().Length))
                                         {
                                             WindowUtil.ClickMouse(windowHwnd, this._fakeMousePoint.X, this._fakeMousePoint.Y);
                                             WindowUtil.SendMessage(windowHwnd, 0x100, 0x23, num);
-                                            Thread.Sleep(random.Next(100));
+                                            Thread.Sleep(random.Next(20));
                                             WindowUtil.SendMessage(windowHwnd, 0x101, 0x23, num);
                                         }
                                     }
@@ -860,11 +1220,351 @@ namespace TenDayBrowser
                     Marshal.ReleaseComObject(domDocument);
                 }
             }
-            if (this.FindTimeOut())
+            if (this.WaitTimeOut())
             {
                 this._inputIndex = -1;
                 parent.ShowTip2("没有找到文本框 \"" + itemName + "\"");
                 flag = true;
+            }
+            return flag;
+        }
+        public bool GoPage(TenDayBrowser parent, string itemName, string text, string tagStr, string indexStr)
+        {
+            bool flag = false;
+            if ((this._curTenDayBrowser != null) && (this._curTenDayBrowser.Document != null))
+            {
+                string str;
+                Rectangle rect = new Rectangle();
+                mshtml.IHTMLDocument2 domDocument = (mshtml.IHTMLDocument2)this._curTenDayBrowser.Document.DomDocument;
+                IntPtr windowHwnd = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
+                if (string.IsNullOrEmpty(indexStr))
+                {
+                    str = "在第1个文本框 \"" + itemName + "\" 输入 \"" + text + "\"";
+                }
+                else
+                {
+                    str = string.Concat(new object[] { "在第", WindowUtil.StringToInt(indexStr) + 1, "个文本框 \"", itemName, "\" 输入 \"", text, "\"" });
+                }
+                parent.ShowTip2(str);
+                mshtml.IHTMLElement elem = HtmlUtil.GetInputElement(domDocument, itemName, tagStr, indexStr);
+                if (elem != null)
+                {
+                    elem.setAttribute("value", text, 0);
+                    Marshal.ReleaseComObject(elem);
+                }
+                mshtml.IHTMLElement elem2 = HtmlUtil.GetLinkElement(domDocument, "btn-jump", "", "3", "0");
+                if (elem2 != null)
+                {
+                    elem2.click();//.setAttribute("value", text)
+                    Marshal.ReleaseComObject(elem2);
+                }
+
+                HtmlElement btnJumpEle = null;
+                var linkElements = _curTenDayBrowser.Document.GetElementsByTagName("a");
+                foreach (HtmlElement linkEle in linkElements)
+                {
+                    string className = linkEle.GetAttribute("className");
+                    if (className == "btn-jump")
+                    {
+                        btnJumpEle = linkEle;
+                        break;
+                    }
+                }
+                if (btnJumpEle != null)
+                {
+                    btnJumpEle.InvokeMember("click");
+                }
+                if (domDocument != null)
+                {
+                    Marshal.ReleaseComObject(domDocument);
+                }
+            }
+            if (this.WaitTimeOut())
+            {
+                this._inputIndex = -1;
+                parent.ShowTip2("没有找到文本框 \"" + itemName + "\"");
+                flag = true;
+            }
+            return flag;
+        }
+
+        bool shouldScroll = true;
+        bool isScrollUp = false;
+        int scrollPos = 0;
+        int clickIndex = 0;
+        string[] clickLinkItem = { "评价详情", "成交记录", "宝贝详情" };
+        string[] clickSpanItem = { "物流运费", "销　　量", "评　　价", "宝贝类型", "支　　付" };
+        bool isFirstEnterPage = true;
+        private DateTime _enterPageTime = new DateTime();
+        private bool resetPageParameter()
+        {
+            _enterPageTime = _now;
+            isFirstEnterPage = true;
+            shouldScroll = true;
+            isScrollUp = false;
+            scrollPos = 0;
+            clickIndex = 0;
+            return true;
+        }
+        public bool VisitCompare(TenDayBrowser parent, string compareTime, string compareIndex, string tagStr, string indexStr)
+        {
+            bool flag = false;
+            if ((this._curTenDayBrowser != null) && (this._curTenDayBrowser.Document != null))
+            {
+                mshtml.IHTMLDocument2 domDocument = (mshtml.IHTMLDocument2)this._curTenDayBrowser.Document.DomDocument;
+                IntPtr windowHwnd = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
+                try
+                {
+                    if (shouldScroll)
+                    {
+                        int height = _curTenDayBrowser.Document.Body.ScrollRectangle.Height;
+                        if (!isScrollUp)
+                        {
+                            scrollPos += height / 30;
+                            if (scrollPos >= height)
+                            {
+                                scrollPos = height;
+                                isScrollUp = true;
+                            }
+                        }
+                        else
+                        {
+                            scrollPos -= height / 30;
+                            if (scrollPos <= 0)
+                            {
+                                scrollPos = 0;
+                                isScrollUp = false;
+                            }
+                        }
+                        _curTenDayBrowser.Document.Window.ScrollTo(new Point(0, scrollPos));
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                	//
+                }
+                
+                parent.ShowTip2(string.Concat(new object[] { "货比第 ", compareIndex, " 家" }));
+            }
+            if (this.IsPageTimeOut(int.Parse(compareTime)))
+            {
+                TabPage seltab = parent.TabControl.SelectedTab;
+                int seltabindex = parent.TabControl.SelectedIndex;
+                if (seltabindex > 0)
+                {
+                    ExtendedTenDayBrowser seltabBroswer = _browsers[seltabindex] as ExtendedTenDayBrowser;
+
+                    parent.TabControl.Controls.Remove(seltab);
+                    _browsers.Remove(seltabBroswer);
+                    _curTenDayBrowser = _browsers[seltabindex - 1] as ExtendedTenDayBrowser;
+
+                    //seltab.Dispose();
+                    //seltabBroswer.Dispose();
+                    this._inputIndex = -1;
+                    parent.ShowTip2("货比三家结束");
+                    flag = true;
+                }
+                
+            }
+            return flag;
+        }
+        private bool ClickCompare(TenDayBrowser parent, string keyword1, string keyword2, string tagStr, string indexStr)
+        {
+            bool flag = false;
+            mshtml.IHTMLDocument2 domDocument = (mshtml.IHTMLDocument2)this._curTenDayBrowser.Document.DomDocument;
+            if (this._status == IEStatus.IEStatus_Wait)
+            {
+                //GetRandClickLinkInfo(parent, domDocument, keyword1, keyword2);
+                TimeSpan span = (TimeSpan)(this._now - this._beforeWaitTime);
+                if (span.TotalSeconds >= this._waitTime)
+                {
+                    flag = GetRandClickLinkInfo(parent, domDocument, keyword1, keyword2);
+                }
+                else if (domDocument != null)
+                {
+                    IntPtr windowHwnd = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
+                    this.MoveMouseToBottom(windowHwnd, domDocument);
+                }
+                return false;
+            }
+            else if (this._status == IEStatus.IEStatus_None)
+            {
+                this._status = IEStatus.IEStatus_Wait;
+                this._waitTime = WindowUtil.StringToInt("1");
+                this._beforeWaitTime = this._now;
+                parent.ShowTip2(string.Concat(new object[] { "深入点击第", this._loopTime + 1, "次，等待 1 ", "秒" }));
+
+            }
+            else if (this._status == IEStatus.IEStatus_MoveToDest)
+            {
+                flag = false;
+                bool isClick = false;
+                bool isFind = false;
+                parent.ShowTip2(string.Concat(new object[] { "深入点击第", this._loopTime + 1, "次:", this._randomClickLink }));
+                ClickLink(parent, this._randomClickLink, string.Empty, ((int)this._randomClickLinkTag).ToString(), this._randomClickLinkIndex.ToString(), ref isFind, ref isClick, false, false, ref this._randomClickLinkCount);
+                if (isClick)
+                {
+                    ResetBrowserComplete();
+                    this._status = IEStatus.IEStatus_None;
+                    flag = true;
+                }
+            }
+            else
+            {
+                flag = true;
+            }
+            if (domDocument != null)
+            {
+                Marshal.ReleaseComObject(domDocument);
+            }
+            return flag;
+        }
+
+        private bool ClickMePage(TenDayBrowser parent, string wangwang, string keyword2, string tagStr, string indexStr)
+        {
+            bool flag = false;
+            mshtml.IHTMLDocument2 domDocument = (mshtml.IHTMLDocument2)this._curTenDayBrowser.Document.DomDocument;
+            if (this._status == IEStatus.IEStatus_Wait)
+            {
+                //GetRandClickLinkInfo(parent, domDocument, keyword1, keyword2);
+                TimeSpan span = (TimeSpan)(this._now - this._beforeWaitTime);
+                if (span.TotalSeconds >= this._waitTime)
+                {
+                    flag = GetMEClickLinkInfo(parent, domDocument, wangwang, tagStr);
+                }
+                else if (domDocument != null)
+                {
+                    IntPtr windowHwnd = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
+                    this.MoveMouseToBottom(windowHwnd, domDocument);
+                }
+                return false;
+            }
+            else if (this._status == IEStatus.IEStatus_None)
+            {
+                this._status = IEStatus.IEStatus_Wait;
+                this._waitTime = WindowUtil.StringToInt("0");
+                this._beforeWaitTime = this._now;
+                parent.ShowTip2(string.Concat(new object[] { "开始点击我了啦" }));
+
+            }
+            else if (this._status == IEStatus.IEStatus_MoveToDest)
+            {
+                flag = false;
+                bool isClick = false;
+                bool isFind = false;
+                parent.ShowTip2(string.Concat(new object[] { "进入我的店铺了" }));
+                ClickLink(parent, this._randomClickLink, string.Empty, ((int)this._randomClickLinkTag).ToString(), this._randomClickLinkIndex.ToString(), ref isFind, ref isClick, false, false, ref this._randomClickLinkCount);
+                if (isClick)
+                {
+                    ResetBrowserComplete();
+                    this._status = IEStatus.IEStatus_None;
+                    flag = true;
+                }
+            }
+            else
+            {
+                flag = true;
+            }
+            if (domDocument != null)
+            {
+                Marshal.ReleaseComObject(domDocument);
+            }
+            return flag;
+        }
+
+        private bool VisitPage(TenDayBrowser parent, string compareTime, string keyword2, string tagStr, string indexStr)
+        {
+            bool flag = false;
+            if (isFirstEnterPage)
+            {
+                resetPageParameter();
+                isFirstEnterPage = false;
+            }
+            mshtml.IHTMLDocument2 domDocument = (mshtml.IHTMLDocument2)this._curTenDayBrowser.Document.DomDocument;
+            IntPtr windowHwnd = GetWindowHwnd(this._curTenDayBrowser.Handle.ToInt32());
+            if (this._status == IEStatus.IEStatus_Wait)
+            {
+                try
+                {
+                    if (shouldScroll)
+                    {
+                        int height = _curTenDayBrowser.Document.Body.ScrollRectangle.Height;
+                        if (!isScrollUp)
+                        {
+                            scrollPos += height / 100;
+                            if (scrollPos >= height)
+                            {
+                                scrollPos = height;
+                                isScrollUp = true;
+                            }
+                        }
+                        else
+                        {
+                            scrollPos -= height / 100;
+                            if (scrollPos <= 0)
+                            {
+                                scrollPos = 0;
+                                isScrollUp = false;
+                                shouldScroll = false;
+                            }
+                        }
+                        _curTenDayBrowser.Document.Window.ScrollTo(new Point(0, scrollPos));
+                    }
+                    else
+                    {
+                        //随机提取内页点击目标
+                        if (clickIndex < clickLinkItem.Length)
+                        {
+                            flag = GetPageClickLinkInfo(parent, domDocument, clickIndex);
+                            if (flag)
+                            {
+                                clickIndex++;
+                            }
+                            return false;
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    _errorString = ex.Message;
+                }
+            }
+            else if (this._status == IEStatus.IEStatus_None)
+            {
+                this._status = IEStatus.IEStatus_Wait;
+                this._waitTime = WindowUtil.StringToInt("0");
+                this._beforeWaitTime = this._now;
+                parent.ShowTip2(string.Concat(new object[] { "开始点击我了啦" }));
+
+            }
+            else if (this._status == IEStatus.IEStatus_MoveToDest)
+            {
+                bool isClick = false;
+                bool isFind = false;
+                parent.ShowTip2(string.Concat(new object[] { "进入我的店铺了" }));
+                ClickLink(parent, this._randomClickLink, string.Empty, ((int)this._randomClickLinkTag).ToString(), this._randomClickLinkIndex.ToString(), ref isFind, ref isClick, false, false, ref this._randomClickLinkCount);
+                if (isClick)
+                {
+                    this._status = IEStatus.IEStatus_None;
+                    shouldScroll = true;
+                }
+                if (!isClick && IsPageTimeOut(int.Parse(compareTime)))
+                {
+                    parent.ShowTip2("点击不到超链接 \"" + _randomClickLink + "\"");
+                    this._errorString = this._errorString + "点击不到超链接 \"" + _randomClickLink;
+                    isFind = false;
+                    flag = true;
+                }
+            }
+
+            if (IsPageTimeOut(int.Parse(compareTime)))
+            {
+                resetPageParameter();
+                flag = true;
+            }
+            if (domDocument != null)
+            {
+                Marshal.ReleaseComObject(domDocument);
             }
             return flag;
         }
@@ -878,7 +1578,7 @@ namespace TenDayBrowser
         {
             HtmlElementCollection elementsByTagName = this._curTenDayBrowser.Document.GetElementsByTagName("HTML");
             int count = elementsByTagName.Count;
-            bool isTimeout = this.FindTimeOut();
+            bool isTimeout = this.WaitTimeOut();
             if ((count > 0) && (!HtmlUtil.MoveToDest(hwnd, elementsByTagName[0], doc, x, y, ref this._fakeMousePoint, shouldWait, isTimeout) || (shouldWait && !isTimeout)))
             {
                 this._scrollTime = this._now;
@@ -888,19 +1588,26 @@ namespace TenDayBrowser
 
         private void MoveMouseToBottom(IntPtr hwnd, mshtml.IHTMLDocument2 doc)
         {
-            if ((this._curTenDayBrowser.Document.GetElementsByTagName("HTML").Count > 0) && (!HtmlUtil.ScrollToBottom(hwnd, doc, this._curTenDayBrowser.Document.GetElementsByTagName("HTML")[0], this._fakeMousePoint, this.GetLoadPercent(), this.FindTimeOut()) || !this._isDocCompleted))
+            if ((this._curTenDayBrowser.Document.GetElementsByTagName("HTML").Count > 0) && (!HtmlUtil.ScrollToBottom(hwnd, doc, this._curTenDayBrowser.Document.GetElementsByTagName("HTML")[0], this._fakeMousePoint, 100, this.WaitTimeOut()) || !this._isDocCompleted))
             {
                 this._scrollTime = this._now;
             }
             this.SetFakeScroll();
         }
-
+        private void MoveMouseToUp(IntPtr hwnd, mshtml.IHTMLDocument2 doc)
+        {
+            if ((this._curTenDayBrowser.Document.GetElementsByTagName("HTML").Count > 0) && (!HtmlUtil.ScrollToUp(hwnd, doc, this._curTenDayBrowser.Document.GetElementsByTagName("HTML")[0], this._fakeMousePoint, 100, this.WaitTimeOut()) || !this._isDocCompleted))
+            {
+                this._scrollTime = this._now;
+            }
+            this.SetFakeScroll();
+        }
         private bool MoveTimeOut()
         {
             TimeSpan span = (TimeSpan)(this._now - this._scrollTime);
             if (span.TotalSeconds < TenDayBrowser.COMPLETEWAITTIME)
             {
-                return this.FindTimeOut();
+                return this.WaitTimeOut();
             }
             return true;
         }
@@ -949,7 +1656,7 @@ namespace TenDayBrowser
                             }
                         }
                     }
-                    if (this.FindTimeOut())
+                    if (this.WaitTimeOut())
                     {
                         this._navigateStatus = 0;
                         this._errorString = this._errorString + "输入网址" + link + "失败！请检查来路是否有语法错误。";
@@ -1034,6 +1741,16 @@ namespace TenDayBrowser
 
                 case TaskCommand.Task_ClickChecked:
                     return this.ClickChecked(parent, this._taskInfo._param2, this._taskInfo._param3, this._taskInfo._param4, ref isClick);
+                case TaskCommand.Task_GoPage:
+                    return this.GoPage(parent, "page", this._taskInfo._param2, "1", "0");
+                case TaskCommand.Task_VisitCompare:
+                    return VisitCompare(parent, this._taskInfo._param2, this._taskInfo._param3, "", "");
+                case TaskCommand.Task_ClickCompare:
+                    return ClickCompare(parent, this._taskInfo._param2, this._taskInfo._param3, "", "");
+                case TaskCommand.Task_ClickMe:
+                    return ClickMePage(parent, this._taskInfo._param2, this._taskInfo._param3, _taskInfo._param4, "");
+                case TaskCommand.Task_VisitPage:
+                    return VisitPage(parent, this._taskInfo._param2, this._taskInfo._param3, "", "");
             }
             parent.ShowTip2("线程未知参数 " + this._taskInfo._param1);
             this._errorString = this._errorString + "线程未知参数 " + this._taskInfo._param1;
@@ -1064,7 +1781,7 @@ namespace TenDayBrowser
                     Marshal.ReleaseComObject(domDocument);
                 }
             }
-            else if (this.FindTimeOut())
+            else if (this.WaitTimeOut())
             {
                 return true;
             }
@@ -1085,7 +1802,7 @@ namespace TenDayBrowser
 
         private void ResetTaskTime()
         {
-            this._findTimeOut = false;
+            this._WaitTimeOut = false;
             this._scrollTime = this._waitFindTime = this._beforeWaitTime = this._now;
         }
 
@@ -1146,7 +1863,7 @@ namespace TenDayBrowser
             bool flag = false;
             this._now = DateTime.Now;
             TimeSpan span = (TimeSpan)(this._now - this._startTaskTime);
-            if (span.TotalMinutes > 20.0)
+            if (span.TotalMinutes > parent._jobExpireTime)
             {
                 this._errorString = "任务超时";
                 this._threadRun = false;
@@ -1240,7 +1957,7 @@ namespace TenDayBrowser
                                 this._fakeScrollHeight = 0;
                             }
                         }
-                        else if ((count > 0) && HtmlUtil.ScrollToDest(windowHwnd, domDocument, elementsByTagName[0], this._fakeScrollHeight, this._fakeMousePoint, this.FindTimeOut()))
+                        else if ((count > 0) && HtmlUtil.ScrollToDest(windowHwnd, domDocument, elementsByTagName[0], this._fakeScrollHeight, this._fakeMousePoint, this.WaitTimeOut()))
                         {
                             Random random2 = new Random();
                             this._fakeScrollHeight = -random2.Next(0xbb8 / TenDayBrowser.THREADINTERVAL);
